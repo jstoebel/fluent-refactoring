@@ -1,4 +1,5 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require 'fileutils'
 require 'pathname'
@@ -15,7 +16,7 @@ def subject
 end
 
 def target
-  @target ||= ARGV.shift or raise "No target specified."
+  (@target ||= ARGV.shift) || raise('No target specified.')
 end
 
 def target_dir
@@ -29,7 +30,7 @@ end
 def ignored_files
   @ignored_files ||= \
     (Dir[root + 'lab/*'] - [subject.to_s]) \
-      .map {|s| s.gsub(/^\/?lab\//, '') }
+    .map { |s| s.gsub(%r{^/?lab/}, '') }
 end
 
 # Find the history of the target commit, up to and including
@@ -45,13 +46,12 @@ def history_of_interest
     end
 end
 
-
 ##### And some side-effect-having helper methods #####
 
 def build_commit_subdir(target_dir, commit_id, index)
   commit = repo.commit(commit_id)
   message = commit.message.downcase.gsub(/\W+/, '-').gsub(/(^\-|\-$)/, '')
-  subdir = target_dir + '%02d-%s' % [index, message]
+  subdir = target_dir + format('%02d-%s', index, message)
   FileUtils.mkdir_p(subdir)
   subdir
 end
@@ -61,6 +61,7 @@ def show_files_of_interest_as_of(commit_id, subdir)
   tree = commit.tree / 'lab'
   tree.contents.each do |blob|
     next if ignored_files.include?(blob.name)
+
     File.open(subdir + blob.name, 'w') do |f|
       f << blob.data
     end
@@ -72,6 +73,7 @@ def combine_ruby_files_in(subdir)
   File.open(subdir + 'combined.rb', 'w') do |combined|
     Dir[subdir + '*.rb'].each do |fname|
       next if fname =~ /combined\.rb/
+
       if first_post
         first_post = false
       else
